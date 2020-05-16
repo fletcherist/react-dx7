@@ -371,66 +371,6 @@
         this.velocity = 80;
       }
 
-      connectedCallback() {
-        var self = this;
-        this.style.display = "block";
-
-        if (window.WebAssembly) {
-          this._root.querySelector("#title").onclick = function () {
-            if (self._plug.gui) {
-              var front = self._root.querySelector("#wam-frontpanel");
-              front.classList.toggle("hidden");
-              front.style.height = front.classList.contains("hidden")
-                ? 0
-                : self._plug.gui.height + "px";
-            }
-          };
-          this._root.querySelector("#wam-frontpanel").onmousedown = function (
-            e
-          ) {
-            e.stopPropagation();
-          };
-          this._root.querySelector("#keys").onmousedown = function (e) {
-            self._actx.resume();
-            e.stopPropagation();
-          };
-
-          if (navigator.userAgent.indexOf("Firefox/") >= 0) {
-            var combos = this._root.querySelectorAll("#topbar select");
-            for (var i = 0; i < combos.length; i++) {
-              combos[i].classList.add("moz");
-            }
-          }
-        } else {
-          this._root.querySelector("#nowasm").style.display = "block";
-          this._root.querySelector("#wam-content").style.display = "none";
-        }
-      }
-
-      showFrontPanel(yesno) {
-        if (this._plug.gui) {
-          yesno = yesno == undefined ? true : yesno;
-          var front = this._root.querySelector("#wam-frontpanel");
-          if (yesno) {
-            front.classList.remove("hidden");
-            front.style.height = this._plug.gui.height + "px";
-          } else {
-            front.classList.add("hidden");
-            front.style.height = 0;
-          }
-        }
-      }
-
-      toggleFrontPanel() {
-        if (this._plug.gui) {
-          var front = this._root.querySelector("#wam-frontpanel");
-          front.classList.toggle("hidden");
-          front.style.height = front.classList.contains("hidden")
-            ? 0
-            : this._plug.gui.height + "px";
-        }
-      }
-
       set context(actx) {
         this._actx = actx;
       }
@@ -448,66 +388,15 @@
         if (name == "src") this.load(newValue);
       }
 
-      async load(url, className) {
+      async load(url) {
         var self = this;
-        if (this._plug) this._plug.disconnect();
-
-        return new Promise(function (resolve, reject) {
-          if (!WAM.webComponentsReady) {
-            var lazy = { host: self, url: url, className: className };
-            lazy.promise = { resolve: resolve, reject: reject };
-            WAM.lazyloads.push(lazy);
-            return;
-          }
-
-          async function loaded() {
-            console.log("className", className);
-            if (!className) {
-              var tokens = url.split("/");
-              className = tokens[tokens.length - 1].split(".")[0];
-              className = className.toUpperCase();
-            }
-            const wam = await self._initInstance(className);
-            console.log(wam);
-            var detail = { url: url, wam: wam, status: 200 };
-            var event = new CustomEvent("load", { detail: detail });
-            self.dispatchEvent(event);
-            if (self.hasAttribute("autoconnect")) {
-              wam.connect(wam.context.destination);
-            }
-            resolve(wam);
-          }
-
-          function resumeAudio() {
-            self._actx.resume();
-            console.log("webaudio resumed");
-            window.removeEventListener("mousedown", resumeAudio);
-            window.removeEventListener("keydown", resumeAudio);
-          }
-
-          function audioWorkletReady() {
-            window.addEventListener("mousedown", resumeAudio);
-            window.addEventListener("keydown", resumeAudio);
-
-            loaded();
-          }
-
-          if (
-            !window.AudioWorkletNode ||
-            location.href.indexOf("http://") == 0
-          ) {
-            if (!self._actx) {
-              if (!self.hasAttribute("autoconnect")) {
-                reject("missing properties");
-                return;
-              }
-              self._actx = new AudioContext();
-            }
-            AWPF.polyfill(self._actx).then(() => audioWorkletReady());
-          } else {
-            audioWorkletReady();
-          }
-        });
+        // if (this._plug) this._plug.disconnect();
+        window.addEventListener("mousedown", () => self._actx.resume());
+        window.addEventListener("keydown", () => self._actx.resume());
+        const wam = await self._initInstance("DX7");
+        wam.connect(wam.context.destination);
+        console.log(wam);
+        return wam;
       }
 
       async _initInstance(cls) {
@@ -595,23 +484,6 @@
     }
 
     window.customElements.define("wam-host", WamHost);
-    window.addEventListener("WebComponentsReady", function () {
-      WAM.webComponentsReady = true;
-      // -- give other WebComponentsReady listeners chance to run
-      // -- before lazy loading
-      setTimeout(function () {
-        WAM.lazyloads.forEach(function (item) {
-          item.host.load(item.url, item.className).then(
-            function (wam) {
-              item.promise.resolve(wam);
-            },
-            function (err) {
-              item.promise.reject(err);
-            }
-          );
-        }, 100);
-      });
-    });
   </script>
 </body>
 
