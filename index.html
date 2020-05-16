@@ -371,31 +371,6 @@
         this.velocity = 80;
       }
 
-      // -- midi keyboard
-      _createKeys() {
-        if (!this._midikeys) {
-          this._midikeys = new QwertyHancock({
-            container: this._root.querySelector("#keys"),
-            height: 60,
-            octaves: 6,
-            startNote: "C2",
-            oct: 4,
-            whiteNotesColour: "white",
-            blackNotesColour: "black",
-            activeColour: "orange",
-          });
-        }
-        setTimeout(
-          function () {
-            this._midikeys.keyDown = (note, name) =>
-              this._plug.onMidi([0x90, note, this.velocity]);
-            this._midikeys.keyUp = (note, name) =>
-              this._plug.onMidi([0x80, note, this.velocity]);
-          }.bind(this),
-          50
-        );
-      }
-
       connectedCallback() {
         var self = this;
         this.style.display = "block";
@@ -419,8 +394,6 @@
             self._actx.resume();
             e.stopPropagation();
           };
-
-          if (this.postponeKeyCreation) this._createKeys();
 
           if (navigator.userAgent.indexOf("Firefox/") >= 0) {
             var combos = this._root.querySelectorAll("#topbar select");
@@ -475,7 +448,7 @@
         if (name == "src") this.load(newValue);
       }
 
-      load(url, className) {
+      async load(url, className) {
         var self = this;
         if (this._plug) this._plug.disconnect();
 
@@ -499,27 +472,10 @@
             var detail = { url: url, wam: wam, status: 200 };
             var event = new CustomEvent("load", { detail: detail });
             self.dispatchEvent(event);
-            if (self.hasAttribute("autoconnect"))
+            if (self.hasAttribute("autoconnect")) {
               wam.connect(wam.context.destination);
+            }
             resolve(wam);
-          }
-
-          function loadWAM() {
-            loaded();
-            // if (url.endsWith(".js")) {
-            //   var script = document.createElement('script');
-            //   script.src = url;
-            //   script.onload = loaded;
-            //   document.head.appendChild(script);
-            // } else if (url.endsWith(".html")) {
-            //   var link = document.createElement('link');
-            //   link.rel = 'import';
-            //   link.href = url;
-            //   link.onload = loaded;
-            //   document.head.appendChild(link);
-            // } else {
-            //   return reject("invalid argument")
-            // };
           }
 
           function resumeAudio() {
@@ -533,16 +489,7 @@
             window.addEventListener("mousedown", resumeAudio);
             window.addEventListener("keydown", resumeAudio);
 
-            loadWAM();
-            // var lib = WAM.origin + "/wamsdk/wam-controller.js";
-            // if (document.querySelectorAll('[src="' + lib + '"]').length > 0) {
-            //   loadWAM();
-            // } else {
-            //   var script = document.createElement('script');
-            //   script.setAttribute('src', lib);
-            //   document.head.appendChild(script);
-            //   script.onload = function () { loadWAM(); }
-            // }
+            loaded();
           }
 
           if (
@@ -584,13 +531,22 @@
           console.log("wamClass", wamClass);
 
           if (wamClass.importScripts) {
+            console.log(0);
             await wamClass.importScripts(actx);
             var plug = new wamClass(actx);
             self._plug = plug;
-            self._initFrontPanel(plug);
             self._initPresets(plug);
-            self._initMidi();
+
+            // self._plug.onMidi([0x90, 90, 120]);
             resolve(plug);
+
+            setInterval(() => {
+              const note = 40;
+              self._plug.onMidi([0x90, note, 120]);
+              setTimeout(() => {
+                self._plug.onMidi([0x80, note, 120]);
+              }, 500);
+            }, 1000);
           } else {
             reject("processor scripts not found");
           }
@@ -635,41 +591,6 @@
             plug.setPatch(patch);
           }
         };
-      }
-
-      _initMidi() {
-        let combo = this._root.querySelector("#midiIn");
-        if (navigator.requestMIDIAccess) {
-          navigator.requestMIDIAccess().then((midiIF) => {
-            for (let input of midiIF.inputs.values()) {
-              let option = new Option(input.name);
-              option.port = input;
-              combo.appendChild(option);
-            }
-            combo.onchange = (e) => {
-              this._plug.midiIn = e.target.options[e.target.selectedIndex].port;
-            };
-            if (combo.options.length > 0) {
-              combo.onchange({ target: combo });
-            }
-          });
-        }
-      }
-
-      _initFrontPanel(plug) {
-        if (plug.gui) {
-          var front = this._root.querySelector("#wam-frontpanel");
-          front.appendChild(plug.gui);
-          if (!front.classList.contains("hidden")) {
-            front.style.height = plug.gui.height + "px";
-          }
-          this._root.querySelector("#wam-content").style.width =
-            plug.gui.width + "px";
-          this._root.querySelector("#keys").style.width = plug.gui.width + "px";
-        }
-        if (!this.postponeKeyCreation) {
-          this._createKeys();
-        }
       }
     }
 
