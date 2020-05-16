@@ -1,6 +1,5 @@
-// WAM Host // Jari Kleimola 2018 (jari@webaudiomodules.org)
 <!-- <script src="https://webaudiomodules.org/wamsdk/wam-controller.js"></script> -->
-<script src="https://www.webaudiomodules.org/libs/webcomponents-lite.js"></script>
+<!-- <script src="https://www.webaudiomodules.org/libs/webcomponents-lite.js"></script> -->
 
 <body>
   // WAM Host // Jari Kleimola 2018 (jari@webaudiomodules.org)
@@ -33,133 +32,14 @@
     <div id="nowasm">
       <div>WebAssembly is unsupported in this browser version</div>
     </div>
-
-    <style>
-      :host {
-        display: block;
-      }
-      #wam-content {
-        font-family: sans-serif;
-        font-weight: 100;
-        font-size: 14px;
-        user-select: none;
-        cursor: default;
-        padding: 5px 0 0 10px;
-      }
-      #wam-content {
-        width: 815px;
-        background: #000;
-        padding: 5px;
-      }
-      #topbar {
-        display: flex;
-        background: #222;
-        color: #eee;
-        height: 40px;
-        line-height: 38px;
-      }
-
-      #logo {
-        line-height: 23px;
-        text-decoration: none;
-        width: 22px;
-        height: 22px;
-        border: 2px solid #222;
-        color: #ccc;
-        border-radius: 50%;
-        margin: 6px 3px 0 4px;
-        cursor: pointer;
-      }
-      #logo div {
-        margin-left: 2px;
-        font-size: 7.5px;
-        font-weight: 100;
-        text-decoration: none;
-      }
-      #logo:hover {
-        border-color: lightgreen;
-        color: white;
-        font-weight: 800px;
-      }
-
-      .right {
-        display: flex;
-        margin-left: auto;
-      }
-      .control {
-        margin: 0 5px;
-      }
-      label {
-        color: #bbb;
-        font-size: 12px;
-      }
-      select {
-        background: #222;
-        color: #eee;
-        height: 20px;
-        margin-top: 10px;
-        cursor: pointer;
-      }
-      li,
-      #title {
-        cursor: pointer;
-      }
-      #title:hover {
-        color: lightgreen;
-      }
-      span {
-        color: #eee;
-      }
-      #keys {
-        border-top: 5px solid darkgreen;
-      }
-      #wam-frontpanel {
-        overflow: hidden;
-      }
-      #wam-frontpanel.hidden {
-        height: 0;
-      }
-      #nowasm {
-        font-family: sans-serif;
-        font-weight: 100;
-        font-size: 14px;
-        color: #222;
-        border: 1px solid #222;
-        padding: 5px;
-        width: 813px;
-        height: 83px;
-        display: none;
-      }
-
-      #midiIn {
-        max-width: 120px;
-      }
-
-      /* select.moz {
-        padding-right: 25px;
-        background-image: url("data:image/svg+xml,\
-        <svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='12px'\
-             height='12px' transform='translate(0,-1)' viewBox='0 0 1200 1000' fill='rgb(0,0,0)'>\
-          <path fill='rgb(200,200,200)' d='M1100 411l-198 -199l-353 353l-353 -353l-197 199l551 551z'/>\
-        </svg>");
-        background-repeat: no-repeat;
-        background-position: calc(100% - 7px) 50%;
-        -moz-appearance: none;
-        appearance: none;
-        border: 1px solid #aaa;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 100;
-      } */
-    </style>
   </template>
 
-  <script src="https://www.webaudiomodules.org/audioworklet.js"></script>
-  <script src="https://www.webaudiomodules.org/libs/keys.js"></script>
+  <!-- <script src="https://www.webaudiomodules.org/audioworklet.js"></script> -->
 
   <script>
     // this._midikeys.keyDown = (note, name) => this._plug.onMidi([0x90, note, this.velocity]);
     // this._midikeys.keyUp   = (note, name) => this._plug.onMidi([0x80, note, this.velocity]);
+    const ORIGIN = "https://webaudiomodules.org/";
 
     class WAMController extends AudioWorkletNode {
       constructor(context, processorName, options) {
@@ -212,10 +92,7 @@
       setState(blob) {}
     }
 
-    var WAM = WAM || {};
-    WAM.lazyloads = WAM.lazyloads || [];
-
-    WAM.DX7 = class DX7 extends WAMController {
+    class DX7 extends WAMController {
       constructor(actx, options) {
         options = options || {};
         options.numberOfInputs = 0;
@@ -223,7 +100,15 @@
         options.outputChannelCount = [1];
 
         super(actx, "wam-dx7", options);
-        this.banks = WAM.DX7.banklist;
+        this.banks = [
+          "rom1A.syx",
+          "steinber.syx",
+          "SynprezFM_03.syx",
+          "weird1.syx",
+          "solange2.syx",
+          "analog1.syx",
+          "Dexed_01.syx",
+        ];
         this.patches = [];
         this.bank = [];
         if (!this.context) this.context = actx;
@@ -238,13 +123,13 @@
 
       static async importScripts(actx) {
         await actx.audioWorklet.addModule(
-          "https://webaudiomodules.org/synths/wasm/dx7/dx7-wasm.js"
+          `${ORIGIN}/synths/wasm/dx7/dx7-wasm.js`
         );
         await actx.audioWorklet.addModule(
-          "https://webaudiomodules.org/synths/wasm/dx7/dx7-loader.js"
+          `${ORIGIN}/synths/wasm/dx7/dx7-loader.js`
         );
         await actx.audioWorklet.addModule(
-          "https://webaudiomodules.org/synths/wasm/dx7/dx7-awp.js"
+          `${ORIGIN}/synths/wasm/dx7/dx7-awp.js`
         );
         return;
       }
@@ -275,7 +160,7 @@
         }
 
         var self = this;
-        var url = "https://webaudiomodules.org/" + "presets/dx7/" + filename;
+        var url = `${ORIGIN}/presets/dx7/${filename}`;
 
         const resp = await fetch(url);
         let data = await resp.arrayBuffer();
@@ -295,68 +180,10 @@
         }
         return self.patches;
       }
+    }
 
-      // async loadBank (filename) {
-      //   function extractName (data,offset) {
-      //     var offset = offset || 118; // 118 for packed, 145 for unpacked
-      //     var name  = "";
-      //     for (var n = 0; n < 10; n++) {
-      //       var c = data[n + offset];
-      //       switch (c) {
-      //         case  92:  c = 'Y';  break;  // yen
-      //         case 126:  c = '>';  break;  // >>
-      //         case 127:  c = '<';  break;  // <<
-      //         default: if (c < 32 || c > 127) c = 32; break;
-      //       }
-      //       name += String.fromCharCode(c);
-      //     }
-      //     return name;
-      //   }
-
-      //   var self = this;
-      //   var url  = "https://webaudiomodules.org/presets/dx7/" + filename;
-
-      //   const resp = await fetch(url);
-      //   const data = resp.arrayBuffer();
-
-      //   // -- packed bank with sysex frame (32 patches)
-      //   if (data.byteLength != 4104) {
-      //     console.log(data.byteLength)
-      //     throw new Error()
-      //   }
-      //   self.patches = [];
-      //   self.bank = [];
-      //   data = new Uint8Array(data);
-      //   data = data.subarray(6,4102);
-      //   for (var i=0; i<32; i++) {
-      //     var offset = i*128;
-      //     var voice  = data.subarray(offset,offset+128);
-      //     var name   = extractName(voice);
-      //     self.patches.push(name);
-      //     self.bank.push(voice);
-      //   }
-      //   return self.patches;
-      // }
-    };
-    WAM.DX7.title = "webDX7";
-
-    /* WAM.DX7.processorScripts = [
-    "synths/dx7/dx7-wasm.js",
-    "synths/dx7/dx7-loader.js",
-    "synths/dx7/dx7-awp.js" ]; */
-
-    WAM.DX7.banklist = [
-      "rom1A.syx",
-      "steinber.syx",
-      "SynprezFM_03.syx",
-      "weird1.syx",
-      "solange2.syx",
-      "analog1.syx",
-      "Dexed_01.syx",
-    ];
-
-    let importDoc = document.currentScript.ownerDocument;
-    let template = importDoc.querySelector("#wam-host-template");
+    const importDoc = document.currentScript.ownerDocument;
+    const template = importDoc.querySelector("#wam-host-template");
 
     // -- having to use ES6 here sux
     class WamHost extends HTMLElement {
@@ -387,55 +214,33 @@
       }
 
       async load(url) {
-        var self = this;
         // if (this._plug) this._plug.disconnect();
-        window.addEventListener("mousedown", () => self._actx.resume());
-        window.addEventListener("keydown", () => self._actx.resume());
-        const wam = await self._initInstance();
+        window.addEventListener("mousedown", () => this._actx.resume());
+        window.addEventListener("keydown", () => this._actx.resume());
+        const wam = await this._initInstance();
         wam.connect(wam.context.destination);
-        console.log(wam);
         return wam;
       }
 
       async _initInstance() {
-        var self = this;
-        return new Promise(async (resolve, reject) => {
-          // -- audiocontext
-          let actx = self._actx;
-          if (!actx) {
-            if (AWPF.isAudioWorkletPolyfilled) {
-              actx = AWPF.context;
-            } else {
-              actx = new AudioContext();
-            }
-            self._actx = actx;
-          }
-          const res = await actx.audioWorklet.addModule(
-            "https://webaudiomodules.org" + "/wamsdk/wam-processor.js"
-          );
-          console.log("WAM", WAM);
-
-          if (WAM.DX7.importScripts) {
-            console.log(0);
-            await WAM.DX7.importScripts(actx);
-            var plug = new WAM.DX7(actx);
-            self._plug = plug;
-            self._initPresets(plug);
-
-            // self._plug.onMidi([0x90, 90, 120]);
-            resolve(plug);
-
-            setInterval(() => {
-              const note = 40;
-              self._plug.onMidi([0x90, note, 120]);
-              setTimeout(() => {
-                self._plug.onMidi([0x80, note, 120]);
-              }, 500);
-            }, 1000);
-          } else {
-            reject("processor scripts not found");
-          }
-        });
+        if (!this._actx) {
+          this._actx = new AudioContext();
+        }
+        const res = await this._actx.audioWorklet.addModule(
+          "https://webaudiomodules.org" + "/wamsdk/wam-processor.js"
+        );
+        await DX7.importScripts(this._actx);
+        var plug = new DX7(this._actx);
+        this._plug = plug;
+        this._initPresets(plug);
+        setInterval(() => {
+          const note = 40;
+          this._plug.onMidi([0x90, note, 120]);
+          setTimeout(() => {
+            this._plug.onMidi([0x80, note, 120]);
+          }, 500);
+        }, 1000);
+        return plug;
       }
 
       _initPresets(plug) {
@@ -451,28 +256,29 @@
         });
 
         // -- change bank
-        banks.onchange = function (e) {
-          plug.loadBank(e.target.value).then((bank) => {
-            patches.innerHTML = "";
-            bank.forEach((name) => {
-              patches.appendChild(new Option(name));
-            });
-            if (!self._inited) {
-              self._inited = true;
-              patches.selectedIndex = plug.defpatch ? plug.defpatch : 0;
-            }
-            patches.onchange({ target: patches });
+        banks.onchange = async (event) => {
+          const bank = await plug.loadBank(event.target.value);
+          patches.innerHTML = "";
+          bank.forEach((name) => {
+            patches.appendChild(new Option(name));
           });
+          if (!self._inited) {
+            self._inited = true;
+            patches.selectedIndex = plug.defpatch ? plug.defpatch : 0;
+          }
+          patches.onchange({ target: patches });
         };
         banks.onchange({ target: banks });
 
         // -- change patch
-        patches.onchange = function (e) {
-          var i = e.target.selectedIndex;
+        patches.onchange = (event) => {
+          const selectedPatch = event.target.selectedIndex;
           if (plug.selectPatch) {
-            plug.selectPatch(i);
+            plug.selectPatch(selectedPatch);
           } else {
-            var patch = plug.getPatch ? plug.getPatch(i) : plug.bank[i];
+            var patch = plug.getPatch
+              ? plug.getPatch(selectedPatch)
+              : plug.bank[selectedPatch];
             plug.setPatch(patch);
           }
         };
@@ -484,6 +290,5 @@
 
 <wam-host
   src="https://www.webaudiomodules.org/synths/dx7.js"
-  autoconnect
   style="display: block;"
 ></wam-host>
