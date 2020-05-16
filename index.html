@@ -249,7 +249,7 @@
         return;
       }
 
-      loadBank(filename) {
+      async loadBank(filename) {
         function extractName(data, offset) {
           var offset = offset || 118; // 118 for packed, 145 for unpacked
           var name = "";
@@ -276,26 +276,24 @@
 
         var self = this;
         var url = "https://webaudiomodules.org/" + "presets/dx7/" + filename;
-        return new Promise((resolve, reject) => {
-          fetch(url).then((resp) => {
-            resp.arrayBuffer().then((data) => {
-              // -- packed bank with sysex frame (32 patches)
-              if (data.byteLength != 4104) reject();
-              self.patches = [];
-              self.bank = [];
-              data = new Uint8Array(data);
-              data = data.subarray(6, 4102);
-              for (var i = 0; i < 32; i++) {
-                var offset = i * 128;
-                var voice = data.subarray(offset, offset + 128);
-                var name = extractName(voice);
-                self.patches.push(name);
-                self.bank.push(voice);
-              }
-              resolve(self.patches);
-            });
-          });
-        });
+
+        const resp = await fetch(url);
+        let data = await resp.arrayBuffer();
+        if (data.byteLength !== 4104) {
+          throw new Error("data.byteLength !== 4104");
+        }
+        self.patches = [];
+        self.bank = [];
+        data = new Uint8Array(data);
+        data = data.subarray(6, 4102);
+        for (var i = 0; i < 32; i++) {
+          var offset = i * 128;
+          var voice = data.subarray(offset, offset + 128);
+          var name = extractName(voice);
+          self.patches.push(name);
+          self.bank.push(voice);
+        }
+        return self.patches;
       }
 
       // async loadBank (filename) {
@@ -393,13 +391,13 @@
         // if (this._plug) this._plug.disconnect();
         window.addEventListener("mousedown", () => self._actx.resume());
         window.addEventListener("keydown", () => self._actx.resume());
-        const wam = await self._initInstance("DX7");
+        const wam = await self._initInstance();
         wam.connect(wam.context.destination);
         console.log(wam);
         return wam;
       }
 
-      async _initInstance(cls) {
+      async _initInstance() {
         var self = this;
         return new Promise(async (resolve, reject) => {
           // -- audiocontext
@@ -415,14 +413,12 @@
           const res = await actx.audioWorklet.addModule(
             "https://webaudiomodules.org" + "/wamsdk/wam-processor.js"
           );
-          console.log("res", res, "cls", cls);
-          var wamClass = WAM[cls];
-          console.log("wamClass", wamClass);
+          console.log("WAM", WAM);
 
-          if (wamClass.importScripts) {
+          if (WAM.DX7.importScripts) {
             console.log(0);
-            await wamClass.importScripts(actx);
-            var plug = new wamClass(actx);
+            await WAM.DX7.importScripts(actx);
+            var plug = new WAM.DX7(actx);
             self._plug = plug;
             self._initPresets(plug);
 
@@ -482,7 +478,6 @@
         };
       }
     }
-
     window.customElements.define("wam-host", WamHost);
   </script>
 </body>
@@ -492,17 +487,3 @@
   autoconnect
   style="display: block;"
 ></wam-host>
-<script>
-  // async function main() {
-  //   try {
-  //     const host = new WamHost();
-  //     console.log('host', host);
-  //     window.host = host;
-  //     const wtf = await host.load();
-  //     console.log('wtf', wtf);
-  //   } catch (error) {
-  //     console.error(error)
-  //   }
-  // }
-  // main()
-</script>
